@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Multimate Business",
   description: "ליווי עסקי מדיד",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3f5f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#121715" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
