@@ -32,18 +32,21 @@ function OverviewForm({ businessId, initial, canEdit }: { businessId: string; in
     return !error;
   });
   return (
-    <div className="card space-y-4">
-      <div className="flex justify-between items-center">
-        <div><h2 className="text-2xl font-bold">פרופיל העסק</h2><p className="text-sm muted mt-1">מה שלא אומת — כתבו שהוא השערה.</p></div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-end gap-3">
+        <div><h2 className="text-2xl font-bold">פרופיל העסק</h2><p className="text-sm muted mt-1">מה שלא אומת — כתבו שהוא השערה. שום מספר לא נכנס כעובדה בלי מקור.</p></div>
         <SaveBadge state={state} />
       </div>
-      {FIELDS.map((f) => (
-        <div key={f.key}>
-          <label className="label" htmlFor={f.key}>{f.label}</label>
-          <textarea id={f.key} rows={2} className="input" readOnly={!canEdit}
-            value={p[f.key] ?? ""} onChange={(e) => setP({ ...p, [f.key]: e.target.value })} />
-        </div>
-      ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {FIELDS.map((f) => (
+          <div key={f.key} className={`card !p-4 ${f.key === "baseline_notes" || f.key === "description" ? "sm:col-span-2" : ""}`}>
+            <label className="label" htmlFor={f.key}>{f.label}</label>
+            <textarea id={f.key} rows={2} className="input resize-none !border-transparent !bg-transparent !px-0 focus:!border-[var(--accent)] focus:!px-3 focus:!bg-[var(--surface)]" readOnly={!canEdit}
+              placeholder={canEdit ? "עוד לא מולא" : "—"}
+              value={p[f.key] ?? ""} onChange={(e) => setP({ ...p, [f.key]: e.target.value })} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

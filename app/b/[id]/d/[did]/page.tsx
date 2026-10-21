@@ -108,6 +108,37 @@ export default function DiagnosticPage() {
         ))}
       </div>
 
+      {isLast && (
+        <div className="panel mt-8 space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-bold">מה צריך לברר</h2>
+            <span className="text-sm muted num">{unknowns} סומנו &quot;לא ידוע&quot; · {total - done} בלי תשובה</span>
+          </div>
+          {done === total && unknowns === 0 && <p className="text-sm muted">כל השאלות נענו. זה הזמן לנסח ממצאים.</p>}
+          {unknowns > 0 && (
+            <ul className="space-y-1.5">
+              {answers.filter((a) => a.is_unknown).map((a) => (
+                <li key={a.id}>
+                  <button className="text-start text-sm flex gap-2 hover:text-[var(--accent)]" onClick={() => pickDept(a.question_snapshot_json.department_code)}>
+                    <span className="chip chip-mark shrink-0">לא ידוע</span>
+                    <span><span className="num muted">{a.position}.</span> {a.question_snapshot_json.prompt}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {done < total && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-sm muted self-center">בלי תשובה:</span>
+              {DEPARTMENTS.map((d) => ({ d, n: deptAnswers(d.code).filter((a) => !filled(a)).length })).filter((x) => x.n > 0).map(({ d, n }) => (
+                <button key={d.code} className="toggle" onClick={() => pickDept(d.code)}>{d.name} <span className="num">{n}</span></button>
+              ))}
+            </div>
+          )}
+          <p className="text-xs muted">כל &quot;לא ידוע&quot; הוא ממצא פוטנציאלי — למשל, אין נתוני הכנסות זה בעצמו משהו לטפל בו.</p>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mt-8">
         <button className="btn-ghost" disabled={deptIdx <= 0} onClick={() => pickDept(DEPARTMENTS[deptIdx - 1].code)}>→ {deptIdx > 0 ? DEPARTMENTS[deptIdx - 1].name : "הקודם"}</button>
         {isLast
