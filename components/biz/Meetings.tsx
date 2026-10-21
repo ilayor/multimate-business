@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAutosave } from "@/components/useAutosave";
-import { SaveBadge } from "@/components/Shell";
+import { SaveBadge, Loading } from "@/components/Shell";
 
 type Meeting = {
   id: string; scheduled_at: string; agenda: string | null; shared_summary: string | null; decisions: string | null;
@@ -30,16 +30,19 @@ export function Meetings({ businessId, isConsultant }: { businessId: string; isC
     }
   }
 
-  if (!list) return <p className="text-gray-500">טוען…</p>;
+  if (!list) return <Loading />;
   return (
     <div className="space-y-4">
-      {isConsultant && <button className="btn" onClick={create}>+ פגישה חדשה (עכשיו)</button>}
-      {list.length === 0 && <div className="card text-gray-500">{isConsultant ? "אין פגישות עדיין." : "עדיין לא שותף סיכום פגישה."}</div>}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="text-2xl font-bold">פגישות</h2><p className="text-sm muted mt-1">כל פגישה נסגרת בסיכום, החלטות ומועד המשך. בעלת העסק רואה רק מה ששותף.</p></div>
+        {isConsultant && <button className="btn" onClick={create}>+ פגישה חדשה</button>}
+      </div>
+      {list.length === 0 && <div className="empty">{isConsultant ? "אין פגישות עדיין." : "עדיין לא שותף סיכום פגישה."}</div>}
       {list.map((m) => (
         <div key={m.id} className="card">
           <button className="w-full flex justify-between items-center" onClick={() => setOpen(open === m.id ? null : m.id)}>
-            <span className="font-semibold">פגישה — {new Date(m.scheduled_at).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span>
-            <span className="chip">{m.status === "published" ? "שותף" : "טיוטה"}</span>
+            <span className="font-bold text-lg">{new Date(m.scheduled_at).toLocaleString("he-IL", { dateStyle: "medium", timeStyle: "short" })}</span>
+            <span className={`chip ${m.status === "published" ? "" : "chip-plain"}`}>{m.status === "published" ? "שותף עם בעלת העסק" : "טיוטה"}</span>
           </button>
           {open === m.id && (isConsultant
             ? <MeetingEditor meeting={m} businessId={businessId} onChange={load} />
@@ -101,7 +104,7 @@ function MeetingEditor({ meeting, businessId, onChange }: { meeting: Meeting; bu
       {field("follow_up_questions", "שאלות פתוחות להמשך")}
       <div>
         <label className="label">מועד הפגישה הבאה</label>
-        <input type="datetime-local" className="input w-auto" value={m.next_meeting_at} onChange={(e) => setM({ ...m, next_meeting_at: e.target.value })} />
+        <input type="datetime-local" className="input !w-auto" value={m.next_meeting_at} onChange={(e) => setM({ ...m, next_meeting_at: e.target.value })} />
       </div>
       {notes !== null && <PrivateNotes meetingId={meeting.id} businessId={businessId} initial={notes} />}
       <button className="btn" onClick={togglePublish}>{meeting.status === "published" ? "ביטול שיתוף" : "שיתוף הסיכום עם בעלת העסק"}</button>
@@ -117,9 +120,9 @@ function PrivateNotes({ meetingId, businessId, initial }: { meetingId: string; b
     return !error;
   });
   return (
-    <div className="border border-dashed border-amber-400 rounded-xl p-3 bg-amber-50">
+    <div className="rounded-xl p-3 border border-dashed border-[var(--mark)] bg-[var(--mark-soft)]">
       <div className="flex justify-between">
-        <label className="label">🔒 הערות פרטיות של היועץ (לעולם לא מוצגות לבעלת העסק)</label>
+        <label className="label !text-[var(--mark)]">🔒 הערות פרטיות — לעולם לא מוצגות לבעלת העסק</label>
         <SaveBadge state={state} />
       </div>
       <textarea className="input" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />

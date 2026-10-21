@@ -65,3 +65,14 @@ export type Task = {
   owner_comment: string | null;
   completed_at: string | null;
 };
+
+// Display bucket for the heuristic above: P1 = act now, P2 = plan, P3 = later.
+export function priorityLevel(f: Finding): 1 | 2 | 3 {
+  if (f.priority_override != null) return Math.min(3, Math.max(1, f.priority_override)) as 1 | 2 | 3;
+  const s = priorityScore(f);
+  if (f.is_blocker || s >= 3) return 1;
+  return s >= 1.5 ? 2 : 3;
+}
+
+export const isOpenTask = (t: Pick<Task, "status">) => t.status !== "done" && t.status !== "canceled";
+export const todayISO = () => new Date().toISOString().slice(0, 10);

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { DEPARTMENTS, FINDING_STATUS, deptName, priorityScore, type Finding } from "@/lib/domain";
+import { Loading } from "@/components/Shell";
+import { DEPARTMENTS, FINDING_STATUS, deptName, priorityLevel, priorityScore, type Finding } from "@/lib/domain";
 import { FindingForm } from "./FindingForm";
 
 export function Findings({ businessId }: { businessId: string }) {
@@ -22,49 +23,64 @@ export function Findings({ businessId }: { businessId: string }) {
     load();
   }
 
-  if (!list) return <p className="text-gray-500">טוען…</p>;
-  const shown = list
+  if (!list) return <Loading />;
+  const open = list.filter((f) => f.status === "open" || f.status === "in_progress");
+  const shown = (showClosed ? list : open)
     .filter((f) => !deptFilter || f.department_code === deptFilter)
-    .filter((f) => showClosed || f.status === "open" || f.status === "in_progress")
     .sort((a, b) => priorityScore(b) - priorityScore(a));
+  const countIn = (code: string) => open.filter((f) => f.department_code === code).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 items-center">
-        <button className="btn" onClick={() => setAdding(true)}>+ ממצא חדש</button>
-        <select className="input w-auto" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
-          <option value="">כל המחלקות</option>
-          {DEPARTMENTS.map((d) => <option key={d.code} value={d.code}>{d.name}</option>)}
-        </select>
-        <label className="text-sm flex items-center gap-1">
-          <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} /> הצגת סגורים
-        </label>
-      </div>
-      <p className="text-xs text-gray-500">סדר העדיפות הוא היוריסטיקה (חוסמים קודם, ואז השפעה+דחיפות ביחס למאמץ) — לא דירוג אובייקטיבי.</p>
-      {adding && <FindingForm businessId={businessId} onDone={() => { setAdding(false); load(); }} />}
-      {shown.length === 0 && !adding && <div className="card text-gray-500">אין ממצאים פתוחים. ממצאים נוצרים מתוך תשובות האבחון.</div>}
-      {shown.map((f) => (
-        <div key={f.id} className="card">
-          <div className="flex justify-between gap-2 flex-wrap">
-            <div className="font-semibold">{f.is_blocker && <span className="text-red-600">⛔ </span>}{f.title}</div>
-            <div className="flex gap-2 items-center text-xs">
-              <span className="chip">{deptName(f.department_code)}</span>
-              <span>השפעה {f.impact} · דחיפות {f.urgency} · מאמץ {f.effort}</span>
-            </div>
-          </div>
-          {f.evidence && <p className="text-sm text-gray-600 mt-1">ראיה: {f.evidence}</p>}
-          {f.rationale && <p className="text-sm text-gray-500 mt-1">נימוק: {f.rationale}</p>}
-          <div className="flex gap-2 mt-3 items-center flex-wrap">
-            <select className="input w-auto text-sm" value={f.status} onChange={(e) => setStatus(f.id, e.target.value)}>
-              {Object.entries(FINDING_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-            <button className="btn-ghost text-sm" onClick={() => setTaskFor(f.id)}>→ הפיכה למשימה</button>
-          </div>
-          {taskFor === f.id && (
-            <QuickTask businessId={businessId} finding={f} onDone={() => { setTaskFor(null); setStatus(f.id, "in_progress"); }} />
-          )}
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold">ממצאים</h2>
+          <p className="text-sm muted mt-1">ממוינים לפי כלל אצבע: חוסמים קודם, ואז השפעה ודחיפות ביחס למאמץ. זה כלי לחשיבה, לא פסק דין.</p>
         </div>
-      ))}
+        <button className="btn" onClick={() => setAdding(true)}>+ ממצא חדש</button>
+      </div>
+
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <button className={`toggle shrink-0 ${!deptFilter ? "!border-solid !border-[var(--accent)] !text-[var(--accent)]" : ""}`} onClick={() => setDeptFilter("")}>הכול <span className="num">{open.length}</span></button>
+        {DEPARTMENTS.map((d) => (
+          <button key={d.code} className={`toggle shrink-0 ${deptFilter === d.code ? "!border-solid !border-[var(--accent)] !text-[var(--accent)]" : ""}`}
+            onClick={() => setDeptFilter(deptFilter === d.code ? "" : d.code)}>{d.name} <span className="num">{countIn(d.code)}</span></button>
+        ))}
+        <button className="toggle shrink-0" aria-pressed={showClosed} onClick={() => setShowClosed(!showClosed)}>כולל סגורים</button>
+      </div>
+
+      {adding && <FindingForm businessId={businessId} defaultDept={deptFilter || undefined} onDone={() => { setAdding(false); load(); }} />}
+      {shown.length === 0 && !adding && (
+        <div className="empty">{list.length === 0 ? "עוד אין ממצאים. הדרך הטובה ביותר: בזמן האבחון, לחצו \"+ ממצא\" ליד תשובה שמעוררת מחשבה." : "אין ממצאים פתוחים בסינון הזה."}</div>
+      )}
+      <div className="space-y-3">
+        {shown.map((f) => {
+          const p = priorityLevel(f);
+          const closed = f.status === "resolved" || f.status === "dismissed";
+          return (
+            <div key={f.id} className={`item ${closed ? "opacity-60" : ""}`} data-p={p}>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className={`chip ${p === 1 ? "chip-bad" : p === 2 ? "chip-mark" : "chip-plain"}`}>P{p}</span>
+                {f.is_blocker && <span className="chip chip-bad">חוסם</span>}
+                <span className="text-xs muted">{deptName(f.department_code)}</span>
+                <span className="text-xs muted num ms-auto">השפעה {f.impact} · דחיפות {f.urgency} · מאמץ {f.effort}</span>
+              </div>
+              <div className="font-bold text-[17px]">{f.title}</div>
+              {f.evidence && <blockquote className="text-sm muted mt-2 border-s-2 border-[var(--line)] ps-3">{f.evidence}</blockquote>}
+              {f.rationale && <p className="text-sm mt-2"><span className="muted">נימוק: </span>{f.rationale}</p>}
+              <div className="flex flex-wrap gap-2 mt-3 items-center">
+                <select aria-label="סטטוס" className="input !w-auto !py-1.5 text-sm" value={f.status} onChange={(e) => setStatus(f.id, e.target.value)}>
+                  {Object.entries(FINDING_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                {!closed && <button className="btn-ghost text-sm" onClick={() => setTaskFor(taskFor === f.id ? null : f.id)}>הפיכה למשימה ←</button>}
+              </div>
+              {taskFor === f.id && (
+                <QuickTask businessId={businessId} finding={f} onDone={() => { setTaskFor(null); setStatus(f.id, "in_progress"); }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -82,13 +98,13 @@ function QuickTask({ businessId, finding, onDone }: { businessId: string; findin
     if (error) setErr(error.message); else onDone();
   }
   return (
-    <div className="mt-3 border border-[var(--line)] rounded-xl p-3 space-y-2 bg-[#fbfaff]">
-      <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <div className="grid sm:grid-cols-2 gap-2">
-        <div><label className="label">תאריך יעד</label><input type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} /></div>
-        <div><label className="label">הגדרת "בוצע"</label><input className="input" value={dod} onChange={(e) => setDod(e.target.value)} /></div>
+    <div className="panel mt-3 space-y-3">
+      <div><label className="label" htmlFor={`qt-${finding.id}`}>המשימה</label><input id={`qt-${finding.id}`} className="input" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div><label className="label" htmlFor={`qd-${finding.id}`}>תאריך יעד</label><input id={`qd-${finding.id}`} type="date" className="input" value={due} onChange={(e) => setDue(e.target.value)} /></div>
+        <div><label className="label" htmlFor={`qo-${finding.id}`}>מתי היא &quot;בוצעה&quot;?</label><input id={`qo-${finding.id}`} className="input" placeholder="למשל: יש טבלה עם 3 חודשים" value={dod} onChange={(e) => setDod(e.target.value)} /></div>
       </div>
-      {err && <p className="text-red-600 text-sm">{err}</p>}
+      {err && <p className="text-[var(--bad)] text-sm">{err}</p>}
       <button className="btn" onClick={save} disabled={!title.trim()}>יצירת משימה</button>
     </div>
   );

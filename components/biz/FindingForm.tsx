@@ -7,10 +7,9 @@ function Scale({ label, value, onChange }: { label: string; value: number; onCha
   return (
     <div>
       <span className="label">{label}</span>
-      <div className="flex gap-1">
+      <div className="seg" role="radiogroup" aria-label={label}>
         {[1, 2, 3].map((n) => (
-          <button type="button" key={n} onClick={() => onChange(n)}
-            className={`w-8 h-8 rounded-lg border ${value === n ? "bg-[var(--accent)] text-white" : "bg-white"}`}>{n}</button>
+          <button type="button" key={n} role="radio" aria-checked={value === n} aria-pressed={value === n} onClick={() => onChange(n)}>{n}</button>
         ))}
       </div>
     </div>
@@ -55,7 +54,7 @@ export function FindingForm(props: {
   }
 
   return (
-    <div className="border border-[var(--line)] rounded-xl p-3 bg-[#fbfaff] space-y-3">
+    <div className="panel space-y-3">
       <div className="grid sm:grid-cols-3 gap-3">
         <div className="sm:col-span-2">
           <label className="label">ממצא (הפרשנות שלך)</label>
@@ -73,18 +72,18 @@ export function FindingForm(props: {
         <textarea className="input" rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} />
       </div>
       <div>
-        <label className="label">נימוק (פרטי ליועץ)</label>
+        <label className="label">נימוק (פרטי — לא מוצג לבעלת העסק)</label>
         <textarea className="input" rows={2} value={rationale} onChange={(e) => setRationale(e.target.value)} />
       </div>
       <div className="flex flex-wrap gap-5 items-end">
         <Scale label="השפעה" value={impact} onChange={setImpact} />
         <Scale label="דחיפות" value={urgency} onChange={setUrgency} />
         <Scale label="מאמץ" value={effort} onChange={setEffort} />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={blocker} onChange={(e) => setBlocker(e.target.checked)} /> חוסם / רגולציה
-        </label>
+        <button type="button" className="toggle" aria-pressed={blocker} onClick={() => setBlocker(!blocker)}>
+          {blocker ? "✓ " : ""}חוסם / רגולציה
+        </button>
       </div>
-      {err && <p className="text-red-600 text-sm">{err}</p>}
+      {err && <p className="text-[var(--bad)] text-sm">{err}</p>}
       <div className="flex gap-2">
         <button className="btn" onClick={save} disabled={!title.trim()}>שמירת ממצא</button>
         <button className="btn-ghost" onClick={props.onDone}>ביטול</button>

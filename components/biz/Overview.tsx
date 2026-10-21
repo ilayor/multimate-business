@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAutosave } from "@/components/useAutosave";
-import { SaveBadge } from "@/components/Shell";
+import { SaveBadge, Loading } from "@/components/Shell";
 
 const FIELDS = [
   { key: "description", label: "תיאור העסק" },
@@ -20,7 +20,7 @@ export function Overview({ businessId, canEdit }: { businessId: string; canEdit:
     supabase().from("businesses").select(FIELDS.map((f) => f.key).join(",")).eq("id", businessId).single()
       .then(({ data }) => setProfile(data as unknown as Profile));
   }, [businessId]);
-  if (!profile) return <p className="text-gray-500">טוען…</p>;
+  if (!profile) return <Loading />;
   return <OverviewForm businessId={businessId} initial={profile} canEdit={canEdit} />;
 }
 
@@ -34,7 +34,7 @@ function OverviewForm({ businessId, initial, canEdit }: { businessId: string; in
   return (
     <div className="card space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="font-semibold">פרופיל העסק</h2>
+        <div><h2 className="text-2xl font-bold">פרופיל העסק</h2><p className="text-sm muted mt-1">מה שלא אומת — כתבו שהוא השערה.</p></div>
         <SaveBadge state={state} />
       </div>
       {FIELDS.map((f) => (

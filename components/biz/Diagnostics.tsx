@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Loading } from "@/components/Shell";
 
 type Diag = { id: string; template_title: string; state: string; started_at: string; completed_at: string | null };
 
@@ -26,26 +27,27 @@ export function Diagnostics({ businessId, isConsultant }: { businessId: string; 
     else router.push(`/b/${businessId}/d/${data}`);
   }
 
-  if (!diags) return <p className="text-gray-500">טוען…</p>;
+  if (!diags) return <Loading />;
   return (
     <div className="space-y-4">
+      <h2 className="text-2xl font-bold">אבחון</h2>
       {diags.length === 0 && (
-        <div className="card text-center py-8">
-          <p className="mb-1 font-semibold">עוד לא בוצע אבחון</p>
-          <p className="text-sm text-gray-500 mb-4">האבחון הראשוני הוא נקודת ההתחלה — אין עדיין ציון או נתונים להציג.</p>
+        <div className="empty">
+          <p className="font-bold text-[var(--ink)]">עוד לא בוצע אבחון</p>
+          <p className="text-sm mt-1">האבחון הוא נקודת ההתחלה. עד שהוא מתקיים אין ציון ואין נתונים — וזה בסדר.</p>
         </div>
       )}
       {isConsultant && templates.map((t) => (
-        <button key={t.id} className="btn" onClick={() => start(t.id)}>+ התחלת אבחון: {t.title} (v{t.version})</button>
+        <button key={t.id} className="btn" onClick={() => start(t.id)}>+ אבחון חדש: {t.title}</button>
       ))}
-      {err && <p className="text-red-600 text-sm">{err}</p>}
+      {err && <p className="text-[var(--bad)] text-sm">{err}</p>}
       {diags.map((d) => (
-        <Link key={d.id} href={`/b/${businessId}/d/${d.id}`} className="card block hover:shadow-md">
+        <Link key={d.id} href={`/b/${businessId}/d/${d.id}`} className="card block hover:border-[var(--accent)] transition">
           <div className="flex justify-between">
-            <span className="font-semibold">{d.template_title}</span>
-            <span className="chip">{d.state === "completed" ? "הושלם" : "בתהליך"}</span>
+            <span className="font-bold text-lg">{d.template_title}</span>
+            <span className={`chip ${d.state === "completed" ? "" : "chip-mark"}`}>{d.state === "completed" ? "הושלם" : "בתהליך — להמשך"}</span>
           </div>
-          <div className="text-sm text-gray-500">התחיל: {new Date(d.started_at).toLocaleString("he-IL")}</div>
+          <div className="text-sm muted mt-1">התחיל: {new Date(d.started_at).toLocaleString("he-IL")}</div>
         </Link>
       ))}
     </div>
