@@ -24,9 +24,10 @@ Import `ilayor/multimate-business` in Vercel, framework Next.js, and set:
 
 Then in Supabase → Authentication → URL Configuration, set Site URL to the Vercel URL.
 
-Pushes to `main` deploy to production automatically. On Vercel's Hobby plan this only happens when
-the commit author is the account owner, so commits in this repo are authored as the owner
-(AI-assisted commits carry a `Co-Authored-By` trailer).
+Vercel's Git integration does not deploy every push here on the Hobby plan, so
+`.github/workflows/deploy.yml` calls a Vercel Deploy Hook on each push to `main`.
+One-time setup: Vercel → Settings → Git → Deploy Hooks (branch `main`), then add the URL as the
+GitHub repository secret `VERCEL_DEPLOY_HOOK`.
 
 ## Database
 - `supabase/migrations/0001_init.sql` — schema, RLS, RPCs (applied).
