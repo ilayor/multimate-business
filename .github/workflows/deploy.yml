@@ -1,0 +1,24 @@
+# Vercel's Hobby plan skips Git deploys for commits it can't attribute to the account owner,
+# so production deploys are triggered through a Vercel Deploy Hook on every push to main.
+# Setup: Vercel → Settings → Git → Deploy Hooks (branch: main), then save the URL as the
+# repository secret VERCEL_DEPLOY_HOOK.
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK secret is not set; skipping deploy."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK"
