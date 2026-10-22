@@ -72,7 +72,7 @@ export default function DiagnosticPage() {
 
   return (
     <Shell crumbs={<Link href={`/b/${id}#diagnostics`} className="underline">חזרה לעסק</Link>}>
-      <div className="sticky top-14 z-10 -mx-4 px-4 pt-3 pb-3 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--line)] mb-6">
+      <div className="sticky top-[calc(56px+env(safe-area-inset-top,0px))] md:top-0 z-10 -mx-4 px-4 pt-3 pb-3 chrome border-b border-[var(--line)] mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
           <div className="min-w-0">
             <h1 className="text-xl font-bold truncate">{diag.template_title}</h1>
@@ -142,7 +142,7 @@ export default function DiagnosticPage() {
       <div className="flex justify-between items-center mt-8">
         <button className="btn-ghost" disabled={deptIdx <= 0} onClick={() => pickDept(DEPARTMENTS[deptIdx - 1].code)}>→ {deptIdx > 0 ? DEPARTMENTS[deptIdx - 1].name : "הקודם"}</button>
         {isLast
-          ? <Link className="btn" href={`/b/${id}#findings`}>לסיכום הממצאים ←</Link>
+          ? <Link className="btn" href={`/b/${id}/profile`}>סיום וחזרה לפרופיל ←</Link>
           : <button className="btn" onClick={() => pickDept(DEPARTMENTS[deptIdx + 1].code)}>{DEPARTMENTS[deptIdx + 1].name} ←</button>}
       </div>
     </Shell>
@@ -166,7 +166,7 @@ function AnswerCard(props: {
   const isFilled = !!val.text.trim() || val.unknown;
 
   return (
-    <div className={`card transition ${isFilled ? "" : "border-dashed"} focus-within:border-[var(--accent)]`}>
+    <div className={`card p-4 transition ${isFilled ? "" : "border-dashed"} focus-within:border-[var(--accent)]`}>
       <div className="flex justify-between gap-3 mb-3">
         <label className="font-semibold text-[17px] leading-snug" htmlFor={`a-${answer.id}`}>
           <span className="num text-[var(--accent)] me-2">{answer.position}</span>{q.prompt}

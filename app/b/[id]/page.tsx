@@ -1,81 +1,174 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRequireUser } from "@/components/useAuth";
-import { Shell, Loading } from "@/components/Shell";
-import { Snapshot } from "@/components/biz/Snapshot";
-import { Overview } from "@/components/biz/Overview";
-import { Diagnostics } from "@/components/biz/Diagnostics";
-import { Findings } from "@/components/biz/Findings";
-import { Tasks } from "@/components/biz/Tasks";
-import { Meetings } from "@/components/biz/Meetings";
+import { useBiz } from "@/components/biz2/BizContext";
+import { useBizData, toggleDone } from "@/components/biz2/useBizData";
+import { TaskRow } from "@/components/biz2/TaskRow";
+import { TaskSheet, MeetingSheet } from "@/components/biz2/sheets";
+import { Icon, Sheet, Check, Skeleton, useToast } from "@/components/ui";
+import { fmtTime, isOpenTask, nextTaskOf, pct, projectProgress, relDay, type Task } from "@/lib/domain";
 
-const TABS = [
-  { key: "snapshot", label: "תמונת מצב" },
-  { key: "diagnostics", label: "אבחון" },
-  { key: "findings", label: "ממצאים", consultantOnly: true },
-  { key: "tasks", label: "משימות והשבוע" },
-  { key: "meetings", label: "פגישות" },
-  { key: "profile", label: "פרופיל העסק" },
-] as const;
-type TabKey = (typeof TABS)[number]["key"];
+export default function Snapshot() {
+  const { biz } = useBiz();
+  const { data, reload, setData } = useBizData(biz.id);
+  const toast = useToast();
+  const [taskSheet, setTaskSheet] = useState<{ open: boolean; task?: Task | null }>({ open: false });
+  const [picker, setPicker] = useState(false);
+  const [meetingSheet, setMeetingSheet] = useState(false);
+  const [reorder, setReorder] = useState(false);
 
-export default function BusinessPage() {
-  const { id } = useParams<{ id: string }>();
-  const user = useRequireUser();
-  const [name, setName] = useState<string | null>(null);
-  const [role, setRole] = useState<"consultant" | "owner" | null>(null);
-  const [tab, setTab] = useState<TabKey>("snapshot");
-  const [notFound, setNotFound] = useState(false);
+  if (!data) return <Skeleton h={90} />;
+  const weekly = data.tasks.filter((t) => t.is_weekly_commitment && t.status !== "canceled");
+  const done = weekly.filter((t) => t.status === "done").length;
+  const upcoming = data.meetings.filter((m) => m.scheduled_at > new Date().toISOString()).slice(0, 3);
+  const projects = data.projects;
 
-  useEffect(() => {
-    if (!user) return;
-    const sb = supabase();
-    sb.from("businesses").select("name").eq("id", id).maybeSingle().then(({ data }) => {
-      if (!data) setNotFound(true);
-      else setName(data.name);
-    });
-    sb.from("business_memberships").select("role").eq("business_id", id).eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => setRole((data?.role as "consultant" | "owner") ?? null));
-    const fromHash = window.location.hash.slice(1) as TabKey;
-    if (TABS.some((t) => t.key === fromHash)) setTab(fromHash);
-  }, [user, id]);
-
-  function choose(t: TabKey) {
-    setTab(t);
-    history.replaceState(null, "", `#${t}`);
-    window.scrollTo({ top: 0 });
+  async function startNewWeek() {
+    const ids = weekly.filter((t) => t.status === "done").map((t) => t.id);
+    if (!ids.length) return;
+    await supabase().from("tasks").update({ is_weekly_commitment: false }).in("id", ids);
+    reload();
+    toast(`${ids.length} משימות שבוצעו הורדו מהשבוע`, async () => { await supabase().from("tasks").update({ is_weekly_commitment: true }).in("id", ids); reload(); });
   }
 
-  if (notFound) return <Shell><div className="empty">העסק לא נמצא, או שאין לך הרשאה לצפות בו.</div></Shell>;
-  if (!user || !name || !role) return <Shell wide><Loading /></Shell>;
+  async function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= projects.length) return;
+    const list = [...projects];
+    [list[i], list[j]] = [list[j], list[i]];
+    setData((d) => d && { ...d, projects: list.map((p, k) => ({ ...p, position: k })) });
+    await Promise.all(list.map((p, k) => supabase().from("projects").update({ position: k }).eq("id", p.id)));
+  }
 
-  const isConsultant = role === "consultant";
-  const tabs = TABS.filter((t) => isConsultant || !("consultantOnly" in t));
   return (
-    <Shell crumbs={name} wide>
-      <div className="flex flex-wrap items-baseline gap-3 mb-5">
-        <h1 className="text-3xl font-bold">{name}</h1>
-        <span className="chip chip-plain">{isConsultant ? "מרחב יועץ" : "המרחב שלי"}</span>
+    <div className="space-y-6">
+      <div>
+        <div className="eyebrow">{new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}</div>
+        <h1 className="large-title mt-1">תמונת מצב</h1>
       </div>
-      <div className="grid gap-6 md:grid-cols-[200px_minmax(0,1fr)]">
-        <nav aria-label="אזורי העסק" className="flex md:flex-col gap-1 overflow-x-auto md:sticky md:top-20 md:self-start -mx-4 px-4 md:mx-0 md:px-0 pb-1">
-          {tabs.map((t) => (
-            <button key={t.key} className="navlink" aria-current={tab === t.key ? "page" : undefined} onClick={() => choose(t.key)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <section className="min-w-0">
-          {tab === "snapshot" && <Snapshot businessId={id} isConsultant={isConsultant} go={choose} />}
-          {tab === "diagnostics" && <Diagnostics businessId={id} isConsultant={isConsultant} />}
-          {tab === "findings" && isConsultant && <Findings businessId={id} />}
-          {tab === "tasks" && <Tasks businessId={id} isConsultant={isConsultant} userId={user.id} />}
-          {tab === "meetings" && <Meetings businessId={id} isConsultant={isConsultant} />}
-          {tab === "profile" && <Overview businessId={id} canEdit={isConsultant} />}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* right: this week + meetings */}
+        <div className="space-y-6 min-w-0">
+          <section className="space-y-3">
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <h2 className="section-title">משימות לשבוע</h2>
+                <div className="caption num">{weekly.length ? `${done} מתוך ${weekly.length} בוצעו` : "עוד לא נבחרו משימות לשבוע"}</div>
+              </div>
+              <div className="flex gap-1">
+                <button className="btn-plain text-sm" onClick={() => setPicker(true)}>מהרשימה</button>
+                <button className="btn-tint" onClick={() => setTaskSheet({ open: true, task: null })}><Icon name="plus" size={18} /> משימה</button>
+              </div>
+            </div>
+            {weekly.length > 0 && <div className="bar done"><span style={{ width: `${(done / weekly.length) * 100}%` }} /></div>}
+            {weekly.length === 0 ? (
+              <div className="empty text-sm">הוסיפו משימה חדשה, או בחרו משימות קיימות "מהרשימה".</div>
+            ) : (
+              <div className="group">
+                {weekly.map((t) => <TaskRow key={t.id} t={t} projects={projects} showWeekly={false}
+                  onToggle={() => toggleDone(t, setData)} onOpen={() => setTaskSheet({ open: true, task: t })} />)}
+              </div>
+            )}
+            {done > 0 && <button className="btn-plain text-sm" onClick={startNewWeek}>שבוע חדש: להוריד את מה שבוצע</button>}
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="section-title">פגישות קרובות</h2>
+            {upcoming.length === 0 ? (
+              <div className="card p-4 flex items-center justify-between gap-3">
+                <span className="muted">אין פגישה קרובה</span>
+                <button className="btn" onClick={() => setMeetingSheet(true)}><Icon name="calendar" size={18} /> לקביעת פגישה</button>
+              </div>
+            ) : (
+              <div className="group">
+                {upcoming.map((m) => (
+                  <Link key={m.id} href={`/b/${biz.id}/meetings/${m.id}`} className="row row-btn">
+                    <span className="grid place-items-center w-11 h-11 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon name="calendar" size={20} /></span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block font-semibold">{relDay(m.scheduled_at)} · {fmtTime(m.scheduled_at)}</span>
+                      <span className="block caption truncate">{[m.title, m.location].filter(Boolean).join(" · ")}</span>
+                    </span>
+                    <Icon name="forward" size={18} className="text-[var(--muted)]" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* left: project status */}
+        <section className="space-y-3 min-w-0">
+          <div className="flex items-end justify-between">
+            <h2 className="section-title">סטטוס פרויקטים</h2>
+            {projects.length > 1 && <button className="btn-plain text-sm" onClick={() => setReorder(!reorder)}>{reorder ? "סיום" : "סידור"}</button>}
+          </div>
+          {projects.length === 0 ? (
+            <div className="empty text-sm">אין פרויקטים עדיין. <Link className="btn-plain inline-flex" href={`/b/${biz.id}/projects`}>להגדרת פרויקט</Link></div>
+          ) : (
+            <div className="space-y-2">
+              {projects.map((p, i) => {
+                const prog = projectProgress(p, data.milestones, data.tasks);
+                const next = nextTaskOf(p.id, data.tasks);
+                return (
+                  <div key={p.id} className="card flex items-stretch">
+                    {reorder && (
+                      <div className="flex flex-col justify-center border-e border-[var(--line)]">
+                        <button className="icon-btn" aria-label="הזזה למעלה" disabled={i === 0} onClick={() => move(i, -1)}><Icon name="up" size={20} /></button>
+                        <button className="icon-btn" aria-label="הזזה למטה" disabled={i === projects.length - 1} onClick={() => move(i, 1)}><Icon name="down" size={20} /></button>
+                      </div>
+                    )}
+                    <Link href={`/b/${biz.id}/projects/${p.id}`} className="flex-1 min-w-0 p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="font-bold leading-snug">{p.title}</div>
+                        <div className="text-end shrink-0">
+                          <div className={`num text-xl font-extrabold leading-none ${prog === 1 ? "text-[var(--done)]" : ""}`}>{pct(prog)}</div>
+                          {(p.goal || p.target != null) && <div className="caption max-w-[140px] truncate">{p.target != null ? `יעד: ${p.target}${p.unit ? " " + p.unit : ""}` : p.goal}</div>}
+                        </div>
+                      </div>
+                      <div className={`bar ${prog === 1 ? "done" : ""}`}><span style={{ width: `${(prog ?? 0) * 100}%` }} /></div>
+                      <div className="text-sm"><span className="muted">המשימה הבאה: </span>{next ? <span className="font-semibold">{next.title}</span> : <span className="muted">אין משימה פתוחה</span>}</div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
-    </Shell>
+
+      <TaskSheet open={taskSheet.open} onClose={() => setTaskSheet({ open: false })} businessId={biz.id} task={taskSheet.task}
+        preset={{ is_weekly_commitment: true }} projects={projects} onSaved={reload} />
+      <MeetingSheet open={meetingSheet} onClose={() => setMeetingSheet(false)} businessId={biz.id} onSaved={reload} />
+      <WeekPicker open={picker} onClose={() => setPicker(false)} tasks={data.tasks.filter((t) => isOpenTask(t) && !t.is_weekly_commitment)} onDone={reload} />
+    </div>
+  );
+}
+
+function WeekPicker({ open, onClose, tasks, onDone }: { open: boolean; onClose: () => void; tasks: Task[]; onDone: () => void }) {
+  const [sel, setSel] = useState<string[]>([]);
+  async function add() {
+    if (sel.length) await supabase().from("tasks").update({ is_weekly_commitment: true }).in("id", sel);
+    setSel([]); onDone(); onClose();
+  }
+  return (
+    <Sheet open={open} onClose={onClose} title="הוספה לשבוע"
+      footer={<button className="btn w-full" disabled={!sel.length} onClick={add}>הוספת {sel.length || ""} משימות לשבוע</button>}>
+      {tasks.length === 0 ? <div className="empty text-sm">אין משימות פתוחות שאינן בשבוע.</div> : (
+        <div className="group">
+          {tasks.map((t) => {
+            const on = sel.includes(t.id);
+            const toggle = () => setSel(on ? sel.filter((x) => x !== t.id) : [...sel, t.id]);
+            return (
+              <div key={t.id} className="row cursor-pointer" onClick={toggle}>
+                <Check done={on} onToggle={toggle} label={t.title} />
+                <span className="flex-1 font-semibold">{t.title}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Sheet>
   );
 }

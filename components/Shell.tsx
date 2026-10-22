@@ -2,42 +2,36 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Icon, Skeleton } from "@/components/ui";
 
-export function Shell({ children, crumbs, wide }: { children: React.ReactNode; crumbs?: React.ReactNode; wide?: boolean }) {
+/** Top bar used outside a business: home is always one tap away. */
+export function AppHeader({ right }: { right?: React.ReactNode }) {
   const router = useRouter();
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur">
-        <div className={`${wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 h-14 flex items-center justify-between gap-3`}>
-          <div className="flex items-center gap-2 min-w-0">
-            <Link href="/" className="flex items-center gap-2 font-bold shrink-0">
-              <span aria-hidden className="grid place-items-center w-7 h-7 rounded-lg bg-[var(--accent)] text-[var(--accent-ink)] text-sm font-extrabold">M</span>
-              <span className="hidden sm:inline">Multimate</span>
-            </Link>
-            {crumbs && <span className="text-sm muted truncate">/ {crumbs}</span>}
-          </div>
-          <button
-            className="text-sm muted hover:text-[var(--ink)]"
-            onClick={async () => {
-              await supabase().auth.signOut();
-              router.replace("/login");
-            }}
-          >
-            יציאה
+    <header className="sticky top-0 z-30 chrome border-b border-[var(--line)] pt-[env(safe-area-inset-top,0px)]">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <Link href="/" className="flex items-center gap-2 font-extrabold" aria-label="מסך ראשי">
+          <span aria-hidden className="grid place-items-center w-8 h-8 rounded-[9px] bg-[var(--accent)] text-[var(--accent-ink)] text-sm">M</span>
+          <span>Multimate</span>
+        </Link>
+        <div className="flex items-center gap-1">
+          {right}
+          <button className="icon-btn" aria-label="יציאה" title="יציאה"
+            onClick={async () => { await supabase().auth.signOut(); router.replace("/login"); }}>
+            <Icon name="logout" size={20} />
           </button>
         </div>
-      </header>
-      <main className={`${wide ? "max-w-6xl" : "max-w-4xl"} mx-auto px-4 py-6`}>{children}</main>
-    </div>
+      </div>
+    </header>
   );
 }
 
-export function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
-  const text = { idle: "", saving: "שומר…", saved: "נשמר", error: "לא נשמר — בדקו חיבור" }[state];
-  const color = state === "error" ? "text-[var(--bad)] font-semibold" : state === "saved" ? "text-[var(--ok)]" : "muted";
-  return <span aria-live="polite" className={`text-xs whitespace-nowrap ${color}`}>{state === "saved" ? "✓ " : ""}{text}</span>;
+/* Kept for the diagnostic screen, which now renders inside the business layout. */
+export function Shell({ children }: { children: React.ReactNode; crumbs?: React.ReactNode; wide?: boolean }) {
+  return <>{children}</>;
 }
-
-export function Loading() {
-  return <div className="space-y-3" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-16 rounded-xl bg-[var(--surface-2)] animate-pulse" />)}</div>;
+export function Loading() { return <Skeleton />; }
+export function SaveBadge({ state }: { state: "idle" | "saving" | "saved" | "error" }) {
+  const text = { idle: "", saving: "שומר…", saved: "נשמר", error: "לא נשמר" }[state];
+  return <span aria-live="polite" className={`text-xs ${state === "error" ? "text-[var(--bad)]" : state === "saved" ? "text-[var(--done)]" : "muted"}`}>{text}</span>;
 }
