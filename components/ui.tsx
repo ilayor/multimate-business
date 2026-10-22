@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { deptName, deptVar } from "@/lib/domain";
 
 /* ---------- icons (1.8px stroke, currentColor) ---------- */
 const paths: Record<string, React.ReactNode> = {
@@ -170,4 +171,32 @@ export function SaveState({ state }: { state: "idle" | "saving" | "saved" | "err
   const map = { saving: ["שומר…", "muted"], saved: ["נשמר", "text-[var(--done)]"], error: ["לא נשמר — בדקו חיבור", "text-[var(--bad)] font-semibold"] } as const;
   const [t, c] = map[state];
   return <span aria-live="polite" className={`text-xs ${c}`}>{t}</span>;
+}
+
+/* ---------- page header: title, optional subtitle, actions on the far side ---------- */
+export function PageHeader({ title, subtitle, eyebrow, actions }: { title: string; subtitle?: React.ReactNode; eyebrow?: string; actions?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
+        {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
+        <h1 className="large-title">{title}</h1>
+        {subtitle && <div className="caption mt-1.5 text-[14px]">{subtitle}</div>}
+      </div>
+      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+    </div>
+  );
+}
+
+export function DeptChip({ code }: { code: string | null | undefined }) {
+  return <span className="dept-chip" style={{ ["--c" as string]: deptVar(code) }}>{deptName(code)}</span>;
+}
+
+export function Empty({ icon, title, children }: { icon: string; title: string; children?: React.ReactNode }) {
+  return (
+    <div className="empty">
+      <span className="empty-icon"><Icon name={icon} size={22} /></span>
+      <div className="font-bold text-[var(--ink)]">{title}</div>
+      {children && <div className="text-sm max-w-sm">{children}</div>}
+    </div>
+  );
 }

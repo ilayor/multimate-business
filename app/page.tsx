@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useRequireUser } from "@/components/useAuth";
 import { AppHeader } from "@/components/Shell";
-import { Icon, Sheet, Field, Skeleton } from "@/components/ui";
+import { Empty, Icon, Sheet, Field, Skeleton } from "@/components/ui";
 import { MeetingSheet } from "@/components/biz2/sheets";
 import { Calendar, type CalItem } from "@/components/home/Calendar";
 import { isOpenTask, projectProgress, pct, relDay, fmtTime, toLocalInput, todayISO, type Meeting, type Milestone, type Project, type Task } from "@/lib/domain";
@@ -82,16 +82,24 @@ export default function Home() {
     <>
       <AppHeader right={<button className="btn-tint" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> עסק</button>} />
       <main className="max-w-6xl mx-auto px-4 pt-6 pb-[calc(40px+env(safe-area-inset-bottom,0px))] space-y-8">
-        <div>
-          <div className="eyebrow">{new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}</div>
-          <h1 className="large-title mt-1">{greeting()}{name ? `, ${name}` : ""}</h1>
+        <div className="space-y-4">
+          <div>
+            <div className="eyebrow">{new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}</div>
+            <h1 className="large-title mt-1">{greeting()}{name ? `, ${name}` : ""}</h1>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <Summary icon="user" label="עסקים בליווי" value={d.biz.length} />
+            <Summary icon="calendar" label="פגישות השבוע" value={d.meetings.filter((m) => m.scheduled_at > now && new Date(m.scheduled_at).getTime() < Date.now() + 7 * 864e5).length} />
+            <Summary icon="list" label="משימות פתוחות" value={d.tasks.filter(isOpenTask).length} />
+            <Summary icon="bell" label="התראות" value={derived.alerts.length} tone={derived.alerts.length ? "bad" : undefined} />
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
           {/* businesses: right */}
           <section className="space-y-3 min-w-0 order-2 lg:order-1">
             <h2 className="section-title">עסקים בליווי <span className="num muted font-normal text-base">{d.biz.length}</span></h2>
-            {d.biz.length === 0 && <div className="empty">עוד אין עסקים בליווי. לחצו "+ עסק" למעלה.</div>}
+            {d.biz.length === 0 && <Empty icon="user" title="עוד אין עסקים בליווי">לחצו "+ עסק" למעלה כדי להוסיף את הראשון.</Empty>}
             {d.biz.map((b) => <BizCard key={b.id} b={b} d={d} next={derived.next(b.id)} last={derived.last(b.id)} />)}
           </section>
 
@@ -99,8 +107,8 @@ export default function Home() {
           <aside className="space-y-6 order-1 lg:order-2">
             <section className="space-y-3">
               <h2 className="section-title flex items-center gap-2"><Icon name="bell" size={20} /> התראות</h2>
-              {derived.alerts.length === 0 ? <div className="empty text-sm">אין התראות. הכול בזמן.</div> : (
-                <div className="group">
+              {derived.alerts.length === 0 ? <Empty icon="check" title="אין התראות">הכול בזמן.</Empty> : (
+                <div className="list-group">
                   {derived.alerts.map((a) => (
                     <Link key={a.key} href={a.href} className="row row-btn">
                       <span aria-hidden className={`w-2.5 h-2.5 rounded-full shrink-0 ${a.tone === "bad" ? "bg-[var(--bad)]" : a.tone === "mark" ? "bg-[var(--mark)]" : "bg-[var(--accent)]"}`} />
@@ -176,6 +184,18 @@ function BizCard({ b, d, next, last }: { b: Biz; d: Data; next?: Meeting; last?:
         <Stat label="פגישה הבאה" value={next ? relDay(next.scheduled_at) : "—"} sub={next ? fmtTime(next.scheduled_at) : last ? "לא נקבעה" : "אין עדיין"} tone={next ? undefined : "mark"} />
       </dl>
     </Link>
+  );
+}
+
+function Summary({ icon, label, value, tone }: { icon: string; label: string; value: number; tone?: "bad" }) {
+  return (
+    <div className="card px-3 py-3 flex items-center gap-3">
+      <span className={`grid place-items-center w-10 h-10 rounded-xl shrink-0 ${tone === "bad" ? "bg-[var(--bad-soft)] text-[var(--bad)]" : "bg-[var(--accent-soft)] text-[var(--accent)]"}`}><Icon name={icon} size={20} /></span>
+      <div className="min-w-0">
+        <div className="num text-xl font-extrabold leading-none">{value}</div>
+        <div className="caption leading-tight mt-1 truncate">{label}</div>
+      </div>
+    </div>
   );
 }
 

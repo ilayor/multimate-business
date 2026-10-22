@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBiz } from "@/components/biz2/BizContext";
 import { MeetingSheet } from "@/components/biz2/sheets";
-import { Icon, Seg, Skeleton, useToast } from "@/components/ui";
+import { Empty, Icon, PageHeader, Seg, Skeleton, useToast } from "@/components/ui";
 import { fmtTime, relDay, type Meeting } from "@/lib/domain";
 
 export default function MeetingsPage() {
@@ -37,10 +37,8 @@ export default function MeetingsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-end justify-between gap-3">
-        <h1 className="large-title">פגישות</h1>
-        <button className="btn" onClick={() => setSheet({ open: true, meeting: null })}><Icon name="plus" size={18} /> פגישה</button>
-      </div>
+      <PageHeader title="פגישות" subtitle="כל פגישה מתועדת: מצב, שבוע שחלף, התקדמות, בעיות ויעדים"
+        actions={<button className="btn" onClick={() => setSheet({ open: true, meeting: null })}><Icon name="plus" size={18} /> פגישה</button>} />
 
       {view === "history" && list && (next ? (
         <div className="card p-5 space-y-4 bg-[var(--accent)] !text-[var(--accent-ink)]">
@@ -64,9 +62,9 @@ export default function MeetingsPage() {
       <Seg label="תצוגה" value={view} onChange={setView} options={[{ value: "history", label: "היסטוריה" }, { value: "archive", label: "ארכיון" }]} />
 
       {!list ? <Skeleton h={64} /> : rest.length === 0 ? (
-        <div className="empty">{view === "archive" ? "הארכיון ריק." : "עוד אין פגישות קודמות."}</div>
+        <Empty icon={view === "archive" ? "archive" : "calendar"} title={view === "archive" ? "הארכיון ריק" : "עוד אין פגישות קודמות"} />
       ) : (
-        <div className="group">
+        <div className="list-group">
           {rest.map((m) => {
             const d = new Date(m.scheduled_at);
             const future = m.scheduled_at > now;

@@ -4,7 +4,7 @@ import { useBiz } from "@/components/biz2/BizContext";
 import { useBizData, toggleDone } from "@/components/biz2/useBizData";
 import { TaskRow } from "@/components/biz2/TaskRow";
 import { TaskSheet } from "@/components/biz2/sheets";
-import { Icon, Seg, Skeleton } from "@/components/ui";
+import { Empty, Icon, PageHeader, Seg, Skeleton } from "@/components/ui";
 import { DEPARTMENTS, TASK_STATUS, deptName, isOpenTask, type Task } from "@/lib/domain";
 
 type Show = "open" | "week" | "all" | "done";
@@ -55,10 +55,8 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <h1 className="large-title">משימות</h1>
-        <button className="btn hidden md:inline-flex" onClick={() => setSheet({ open: true, task: null })}><Icon name="plus" size={18} /> משימה חדשה</button>
-      </div>
+      <PageHeader title="משימות" subtitle={`${data.tasks.filter(isOpenTask).length} פתוחות · ${data.tasks.filter((t) => t.is_weekly_commitment && isOpenTask(t)).length} בשבוע הזה`}
+        actions={<button className="btn hidden md:inline-flex" onClick={() => setSheet({ open: true, task: null })}><Icon name="plus" size={18} /> משימה חדשה</button>} />
 
       <div className="space-y-2">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
@@ -103,11 +101,11 @@ export default function TasksPage() {
       </div>
 
       {count === 0 ? (
-        <div className="empty">{data.tasks.length === 0 ? "עוד אין משימות. לחצו + כדי להוסיף את הראשונה." : "אין משימות שמתאימות לסינון."}</div>
+        <Empty icon="list" title={data.tasks.length === 0 ? "עוד אין משימות" : "אין משימות שמתאימות לסינון"}>{data.tasks.length === 0 ? "לחצו + כדי להוסיף את הראשונה." : "נסו לשנות את הסינון."}</Empty>
       ) : groups.map((g) => (
         <section key={g.key} className="space-y-2">
           {g.title && <h2 className="eyebrow px-1 flex justify-between"><span>{g.title}</span><span className="num">{g.items.length}</span></h2>}
-          <div className="group">
+          <div className="list-group">
             {g.items.map((t) => <TaskRow key={t.id} t={t} projects={data.projects} onToggle={() => toggleDone(t, setData)} onOpen={() => setSheet({ open: true, task: t })} />)}
           </div>
         </section>

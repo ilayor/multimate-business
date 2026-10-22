@@ -1,9 +1,9 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBiz } from "@/components/biz2/BizContext";
-import { Field, Icon, SaveState, Skeleton, useAutosave, useToast } from "@/components/ui";
+import { Field, Icon, PageHeader, SaveState, Skeleton, useAutosave, useToast } from "@/components/ui";
+import { Characterization } from "@/components/biz2/Characterization";
 
 type LinkItem = { label: string; url: string };
 type Service = { name: string; price: string; note: string };
@@ -17,7 +17,6 @@ const COLS = "name,profession,owner_name,phone,email,description,target_segments
 export default function ProfilePage() {
   const { biz } = useBiz();
   const [p, setP] = useState<Profile | null>(null);
-  const [diags, setDiags] = useState<{ id: string; template_title: string; started_at: string }[]>([]);
   useEffect(() => {
     supabase().from("businesses").select(COLS).eq("id", biz.id).single().then(({ data }) => {
       const d = data as Record<string, unknown>;
@@ -29,14 +28,12 @@ export default function ProfilePage() {
         logo_path: (d.logo_path as string | null) ?? null,
       });
     });
-    supabase().from("diagnostics").select("id,template_title,started_at").eq("business_id", biz.id).order("started_at", { ascending: false })
-      .then(({ data }) => setDiags(data ?? []));
   }, [biz.id]);
   if (!p) return <Skeleton h={80} n={4} />;
-  return <ProfileForm initial={p} diags={diags} />;
+  return <ProfileForm initial={p} />;
 }
 
-function ProfileForm({ initial, diags }: { initial: Profile; diags: { id: string; template_title: string; started_at: string }[] }) {
+function ProfileForm({ initial }: { initial: Profile }) {
   const { biz, refresh, isConsultant } = useBiz();
   const toast = useToast();
   const [p, setP] = useState(initial);
@@ -72,10 +69,7 @@ function ProfileForm({ initial, diags }: { initial: Profile; diags: { id: string
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="large-title">פרופיל העסק</h1>
-        <SaveState state={state} />
-      </div>
+      <PageHeader title="פרופיל העסק" subtitle="כל הנתונים היבשים של העסק במקום אחד" actions={<SaveState state={state} />} />
 
       {/* identity */}
       <div className="card p-4 flex items-center gap-4">
@@ -114,6 +108,10 @@ function ProfileForm({ initial, diags }: { initial: Profile; diags: { id: string
         <Field label="חזון"><textarea className="input" value={p.vision} onChange={(e) => set("vision", e.target.value)} placeholder="איפה העסק בעוד שנה, ובעוד 3 שנים" /></Field>
       </Section>
 
+      <Section title="אפיון ראשוני">
+        <Characterization businessId={biz.id} canEdit={isConsultant} />
+      </Section>
+
       <Section title="שירותים ומחירים">
         {p.services.map((s, i) => (
           <div key={i} className="rounded-xl bg-[var(--surface-2)] p-3 space-y-2">
@@ -135,19 +133,6 @@ function ProfileForm({ initial, diags }: { initial: Profile; diags: { id: string
         <Field label="מה מאומת ומה עדיין השערה"><textarea className="input" value={p.baseline_notes} onChange={(e) => set("baseline_notes", e.target.value)} /></Field>
       </Section>
 
-      {diags.length > 0 && (
-        <Section title="אבחונים">
-          <div className="group !shadow-none border border-[var(--line)]">
-            {diags.map((d) => (
-              <Link key={d.id} href={`/b/${biz.id}/d/${d.id}`} className="row row-btn">
-                <Icon name="note" size={20} className="text-[var(--accent)]" />
-                <span className="flex-1"><span className="block font-semibold">{d.template_title}</span><span className="caption">{new Date(d.started_at).toLocaleDateString("he-IL")}</span></span>
-                <Icon name="forward" size={18} className="text-[var(--muted)]" />
-              </Link>
-            ))}
-          </div>
-        </Section>
-      )}
     </div>
   );
 }

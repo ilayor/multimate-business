@@ -56,7 +56,7 @@ export function Materials({ businessId, meetingId }: { businessId: string; meeti
   return (
     <div className="space-y-2">
       {items.length > 0 && (
-        <div className="group">
+        <div className="list-group">
           {items.map((m) => (
             <div key={m.id} className="row">
               <span className="grid place-items-center w-9 h-9 rounded-lg bg-[var(--surface-2)] text-[var(--ink-2)]"><Icon name={m.kind === "link" ? "link" : m.kind === "file" ? "file" : "note"} size={18} /></span>

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useBiz } from "@/components/biz2/BizContext";
 import { useBizData } from "@/components/biz2/useBizData";
 import { ProjectSheet } from "@/components/biz2/sheets";
-import { Icon, Skeleton } from "@/components/ui";
-import { DEPARTMENTS, deptName, isOpenTask, nextTaskOf, pct, projectProgress, fmtDate } from "@/lib/domain";
+import { Empty, Icon, PageHeader, Skeleton } from "@/components/ui";
+import { DEPARTMENTS, deptName, deptVar, isOpenTask, nextTaskOf, pct, projectProgress, fmtDate } from "@/lib/domain";
 
 export default function ProjectsPage() {
   const { biz } = useBiz();
@@ -22,25 +22,17 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="large-title">פרויקטים</h1>
-          <p className="caption mt-1">לכל מחלקה: מאיפה מתחילים, לאן רוצים להגיע, ואילו צעדים בדרך.</p>
-        </div>
-        <button className="btn shrink-0" onClick={() => setSheet({ open: true })}><Icon name="plus" size={18} /> פרויקט</button>
-      </div>
+      <PageHeader title="פרויקטים" subtitle="לכל מחלקה: מאיפה מתחילים, לאן רוצים להגיע, ואילו צעדים בדרך."
+        actions={<button className="btn" onClick={() => setSheet({ open: true })}><Icon name="plus" size={18} /> פרויקט</button>} />
 
       {data.projects.length === 0 && (
-        <div className="empty">
-          <div className="font-bold text-[var(--ink)]">עוד אין פרויקטים</div>
-          <div className="text-sm mt-1">פרויקט הוא שינוי אחד שרוצים להשיג, למשל "לבנות תהליך מכירה מסודר". בחרו מחלקה כדי להתחיל.</div>
-        </div>
+        <Empty icon="target" title="עוד אין פרויקטים">פרויקט הוא שינוי אחד שרוצים להשיג, למשל "לבנות תהליך מכירה מסודר". בחרו מחלקה כדי להתחיל.</Empty>
       )}
 
       {used.map((g) => (
         <section key={g.code || "general"} className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h2 className="eyebrow">{g.name}</h2>
+            <h2 className="flex items-center gap-2 font-bold" style={{ color: deptVar(g.code) }}><span className="w-2.5 h-2.5 rounded-full" style={{ background: deptVar(g.code) }} />{g.name}</h2>
             <button className="btn-plain text-sm" onClick={() => setSheet({ open: true, dept: g.code })}>+ בתחום הזה</button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -50,7 +42,7 @@ export default function ProjectsPage() {
               const ms = data.milestones.filter((m) => m.project_id === p.id);
               const open = data.tasks.filter((t) => t.project_id === p.id && isOpenTask(t)).length;
               return (
-                <Link key={p.id} href={`/b/${biz.id}/projects/${p.id}`} className="card p-4 space-y-3 active:scale-[.99] transition-transform">
+                <Link key={p.id} href={`/b/${biz.id}/projects/${p.id}`} className="card p-4 space-y-3 active:scale-[.99] transition-transform dept-stripe" style={{ ["--c" as string]: deptVar(p.department_code) }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-bold text-[17px] leading-snug">{p.title}</div>
@@ -76,7 +68,7 @@ export default function ProjectsPage() {
         <section className="space-y-2">
           <h2 className="eyebrow px-1">מחלקות בלי פרויקט</h2>
           <div className="flex flex-wrap gap-2">
-            {unused.map((g) => <button key={g.code} className="btn-tint" onClick={() => setSheet({ open: true, dept: g.code })}><Icon name="plus" size={16} /> {g.name}</button>)}
+            {unused.map((g) => <button key={g.code} className="btn-tint !bg-[color-mix(in_srgb,var(--c)_12%,transparent)] !text-[var(--c)]" style={{ ["--c" as string]: deptVar(g.code) }} onClick={() => setSheet({ open: true, dept: g.code })}><Icon name="plus" size={16} /> {g.name}</button>)}
           </div>
         </section>
       )}

@@ -62,10 +62,34 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto md:grid md:grid-cols-[minmax(0,1fr)_232px] md:gap-8 md:px-6">
-        <main className="min-w-0 px-4 md:px-0 pt-4 md:pt-8 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:pb-16">
+      <div className="max-w-6xl mx-auto md:grid md:grid-cols-[248px_minmax(0,1fr)] md:gap-8 md:px-6">
+        {/* desktop sidebar, on the right (start side) */}
+        <aside className="hidden md:block">
+          <div className="sticky top-6 pt-6 space-y-3">
+            <Link href="/" className="btn-plain -ms-1.5 text-sm"><Icon name="back" size={18} /> כל העסקים</Link>
+            <div className="card p-3 space-y-3">
+              <div className="flex items-center gap-3 p-1">
+                <Logo biz={biz} />
+                <div className="min-w-0">
+                  <div className="text-lg font-extrabold leading-tight truncate">{biz?.name ?? " "}</div>
+                  {biz?.profession && <div className="text-[13px] muted truncate">{biz.profession}</div>}
+                </div>
+              </div>
+              <nav aria-label="עמודי העסק" className="space-y-0.5 border-t border-[var(--line)] pt-3">
+                {NAV.map((n) => (
+                  <Link key={n.href} href={base + n.href} aria-current={active(n.href) ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 h-11 rounded-xl font-semibold transition-colors ${active(n.href) ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm" : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"}`}>
+                    <Icon name={n.icon} size={20} /> {n.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </aside>
+
+        <main className="min-w-0 px-4 md:px-0 pt-4 md:pt-12 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:pb-16">
           {backHref && (
-            <button className="hidden md:inline-flex btn-plain -ms-1.5 mb-2" onClick={() => router.push(backHref)}>
+            <button className="hidden md:inline-flex btn-plain -ms-1.5 mb-3 text-sm" onClick={() => router.push(backHref)}>
               <Icon name="back" size={18} /> חזרה
             </button>
           )}
@@ -73,28 +97,6 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
             <BizContext.Provider value={{ biz, isConsultant, userId: user.id, refresh: load }}>{children}</BizContext.Provider>
           )}
         </main>
-
-        {/* desktop sidebar, on the left */}
-        <aside className="hidden md:block">
-          <div className="sticky top-6 space-y-6 pt-2">
-            <Link href="/" className="btn-plain -ms-1.5"><Icon name="back" size={18} /> כל העסקים</Link>
-            <div className="flex items-center gap-3">
-              <Logo biz={biz} />
-              <div className="min-w-0">
-                <div className="text-xl font-extrabold leading-tight truncate">{biz?.name ?? " "}</div>
-                {biz?.profession && <div className="text-sm muted truncate">{biz.profession}</div>}
-              </div>
-            </div>
-            <nav aria-label="עמודי העסק" className="space-y-1">
-              {NAV.map((n) => (
-                <Link key={n.href} href={base + n.href} aria-current={active(n.href) ? "page" : undefined}
-                  className={`flex items-center gap-3 px-3 h-11 rounded-xl font-semibold transition-colors ${active(n.href) ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"}`}>
-                  <Icon name={n.icon} size={20} /> {n.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </aside>
       </div>
 
       {/* phone tab bar */}

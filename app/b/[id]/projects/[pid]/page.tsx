@@ -6,8 +6,8 @@ import { useBiz } from "@/components/biz2/BizContext";
 import { useBizData, toggleDone } from "@/components/biz2/useBizData";
 import { TaskRow } from "@/components/biz2/TaskRow";
 import { ProjectSheet, TaskSheet } from "@/components/biz2/sheets";
-import { Check, DeleteButton, Icon, Skeleton, useToast } from "@/components/ui";
-import { deptName, fmtDate, pct, projectProgress, type Task } from "@/lib/domain";
+import { Check, DeleteButton, DeptChip, Empty, Icon, Skeleton, useToast } from "@/components/ui";
+import { deptVar, fmtDate, pct, projectProgress, type Task } from "@/lib/domain";
 
 export default function ProjectPage() {
   const { pid } = useParams<{ pid: string }>();
@@ -60,7 +60,7 @@ export default function ProjectPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="chip">{deptName(p.department_code)}</span>
+          <DeptChip code={p.department_code} />
           <h1 className="large-title mt-2">{p.title}</h1>
           {p.target_date && <div className="caption mt-1">תאריך יעד: {fmtDate(p.target_date, { day: "numeric", month: "long", year: "numeric" })}</div>}
         </div>
@@ -93,12 +93,12 @@ export default function ProjectPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="card p-4"><div className="eyebrow mb-1">המצב היום</div><p className="whitespace-pre-wrap">{p.current_state || <span className="muted">לא נכתב</span>}</p></div>
-        <div className="card p-4 border-s-4 border-[var(--accent)]"><div className="eyebrow mb-1">היעד</div><p className="whitespace-pre-wrap">{p.goal || <span className="muted">לא נכתב</span>}</p></div>
+        <div className="card p-4 dept-stripe" style={{ ["--c" as string]: deptVar(p.department_code) }}><div className="eyebrow mb-1">היעד</div><p className="whitespace-pre-wrap">{p.goal || <span className="muted">לא נכתב</span>}</p></div>
       </div>
 
       <section className="space-y-2">
         <h2 className="section-title">תת-יעדים</h2>
-        <div className="group">
+        <div className="list-group">
           {ms.map((m) => (
             <div key={m.id} className={`row ${m.done ? "bg-[var(--done-soft)]" : ""}`}>
               <Check done={m.done} onToggle={() => toggleMs(m.id, m.done)} label={m.title} />
@@ -119,8 +119,8 @@ export default function ProjectPage() {
           <h2 className="section-title">משימות</h2>
           <button className="btn-tint" onClick={() => setTaskSheet({ open: true, task: null })}><Icon name="plus" size={18} /> משימה</button>
         </div>
-        {tasks.length === 0 ? <div className="empty text-sm">אין משימות בפרויקט. אפשר לעבוד משימה אחרי משימה, או להוסיף כמה בבת אחת.</div> : (
-          <div className="group">{tasks.map((t) => <TaskRow key={t.id} t={t} projects={data.projects} onToggle={() => toggleDone(t, setData)} onOpen={() => setTaskSheet({ open: true, task: t })} />)}</div>
+        {tasks.length === 0 ? <Empty icon="list" title="אין משימות בפרויקט">אפשר לעבוד משימה אחרי משימה, או להוסיף כמה בבת אחת.</Empty> : (
+          <div className="list-group">{tasks.map((t) => <TaskRow key={t.id} t={t} projects={data.projects} onToggle={() => toggleDone(t, setData)} onOpen={() => setTaskSheet({ open: true, task: t })} />)}</div>
         )}
       </section>
 

@@ -1,6 +1,6 @@
 "use client";
-import { Check, Icon } from "@/components/ui";
-import { deptName, fmtDate, isOpenTask, todayISO, TASK_STATUS, type Project, type Task } from "@/lib/domain";
+import { Check, DeptChip, Icon } from "@/components/ui";
+import { fmtDate, isOpenTask, todayISO, TASK_STATUS, type Project, type Task } from "@/lib/domain";
 
 export function TaskRow({ t, projects, onToggle, onOpen, showWeekly = true }: {
   t: Task; projects: Project[]; onToggle: () => void; onOpen: () => void; showWeekly?: boolean;
@@ -14,8 +14,8 @@ export function TaskRow({ t, projects, onToggle, onOpen, showWeekly = true }: {
       <div className="flex-1 min-w-0">
         <div className={`font-semibold leading-snug ${done ? "line-through text-[var(--done)]" : ""}`}>{t.title}</div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-          <span className="chip">{deptName(t.department_code)}</span>
-          {project && <span className="chip chip-accent max-w-[160px] truncate">{project.title}</span>}
+          <DeptChip code={t.department_code} />
+          {project && <span className="caption font-semibold max-w-[180px] truncate">· {project.title}</span>}
           {t.status === "blocked" && <span className="chip chip-bad">{TASK_STATUS.blocked}</span>}
           {t.status === "in_progress" && <span className="chip chip-mark">{TASK_STATUS.in_progress}</span>}
           {t.due_on && <span className={`caption num ${late ? "!text-[var(--bad)] font-bold" : ""}`}>{late ? "באיחור · " : ""}{fmtDate(t.due_on)}</span>}

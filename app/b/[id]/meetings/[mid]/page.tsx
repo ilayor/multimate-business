@@ -8,6 +8,7 @@ import { TaskRow } from "@/components/biz2/TaskRow";
 import { MeetingSheet, TaskSheet } from "@/components/biz2/sheets";
 import { Recorder } from "@/components/biz2/Recorder";
 import { Materials } from "@/components/biz2/Materials";
+import { Characterization } from "@/components/biz2/Characterization";
 import { Icon, SaveState, Skeleton, useAutosave, useToast } from "@/components/ui";
 import { fmtTime, isOpenTask, pct, projectProgress, relDay, type Meeting, type Task } from "@/lib/domain";
 
@@ -22,7 +23,7 @@ type Notes = Record<(typeof STEPS)[number]["key"], string>;
 
 export default function MeetingRoom() {
   const { mid } = useParams<{ mid: string }>();
-  const { biz } = useBiz();
+  const { biz, isConsultant } = useBiz();
   const { data, reload, setData } = useBizData(biz.id);
   const toast = useToast();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -58,6 +59,8 @@ export default function MeetingRoom() {
   if (!meeting || !notes || !data) return <Skeleton h={120} />;
   const weekly = data.tasks.filter((t) => t.is_weekly_commitment && t.status !== "canceled");
   const nextMeeting = data.meetings.find((m) => m.scheduled_at > meeting.scheduled_at && m.id !== meeting.id);
+  // the first meeting of a business opens with the initial characterization
+  const isFirst = data.meetings[0]?.id === meeting.id;
 
   async function complete() {
     const at = meeting!.completed_at ? null : new Date().toISOString();
@@ -91,7 +94,7 @@ export default function MeetingRoom() {
             <span className={`chip ${meeting.completed_at ? "chip-done" : "chip-accent"}`}>{meeting.completed_at ? "תועדה" : new Date(meeting.scheduled_at) > new Date() ? "מתוכננת" : "בתיעוד"}</span>
             <SaveState state={notesState} />
           </div>
-          <h1 className="large-title mt-2">{relDay(meeting.scheduled_at)} · {fmtTime(meeting.scheduled_at)}</h1>
+          <h1 className="text-[26px] md:text-[32px] font-extrabold tracking-tight leading-tight mt-2">{relDay(meeting.scheduled_at)} · {fmtTime(meeting.scheduled_at)}</h1>
           <div className="caption mt-1">{[meeting.title, meeting.location, `${meeting.duration_minutes} דק׳`].filter(Boolean).join(" · ")}</div>
         </div>
         <button className="btn-tint shrink-0" onClick={() => setEdit(true)}><Icon name="edit" size={18} /> עריכה</button>
@@ -102,6 +105,7 @@ export default function MeetingRoom() {
       {/* jump between the fixed steps */}
       <nav aria-label="שלבי הפגישה" className="sticky top-[calc(56px+env(safe-area-inset-top,0px))] md:top-0 z-10 -mx-4 px-4 md:mx-0 md:px-0 py-2 chrome md:bg-transparent md:backdrop-blur-none overflow-x-auto">
         <div className="flex gap-1.5">
+          {isFirst && <a href="#characterization" className="shrink-0 h-9 px-3 rounded-full flex items-center gap-1.5 text-sm font-semibold bg-[var(--accent)] text-[var(--accent-ink)]">אפיון ראשוני</a>}
           {STEPS.map((s) => (
             <a key={s.key} href={`#${s.key}`} className={`shrink-0 h-9 px-3 rounded-full flex items-center gap-1.5 text-sm font-semibold ${notes[s.key].trim() ? "bg-[var(--done-soft)] text-[var(--done)]" : "bg-[var(--surface)] shadow-sm"}`}>
               <span className="num">{s.n}</span> {s.title}
@@ -109,6 +113,16 @@ export default function MeetingRoom() {
           ))}
         </div>
       </nav>
+
+      {isFirst && (
+        <section id="characterization" className="card p-4 space-y-3 scroll-mt-28 border-2 border-[var(--accent)]">
+          <div className="flex items-start gap-3">
+            <span className="grid place-items-center w-8 h-8 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"><Icon name="note" size={18} /></span>
+            <div><h2 className="font-bold text-lg leading-tight">אפיון ראשוני</h2><div className="caption">פגישה ראשונה: מכירים את העסק לעומק. התשובות נשמרות גם בפרופיל העסק.</div></div>
+          </div>
+          <Characterization businessId={biz.id} canEdit={isConsultant} compact />
+        </section>
+      )}
 
       {STEPS.map((s) => (
         <section key={s.key} id={s.key} className="card p-4 space-y-3 scroll-mt-28">
@@ -132,7 +146,7 @@ export default function MeetingRoom() {
           )}
 
           {s.key === "notes_last_week" && (
-            weekly.length ? <div className="group !shadow-none border border-[var(--line)]">{weekly.map((t) => <TaskRow key={t.id} t={t} projects={data.projects} showWeekly={false} onToggle={() => toggleDone(t, setData)} onOpen={() => setTaskSheet({ open: true, task: t })} />)}</div>
+            weekly.length ? <div className="list-group !shadow-none border border-[var(--line)]">{weekly.map((t) => <TaskRow key={t.id} t={t} projects={data.projects} showWeekly={false} onToggle={() => toggleDone(t, setData)} onOpen={() => setTaskSheet({ open: true, task: t })} />)}</div>
               : <div className="caption">לא היו משימות לשבוע.</div>
           )}
 
@@ -147,6 +161,13 @@ export default function MeetingRoom() {
           )}
         </section>
       ))}
+
+      {!isFirst && (
+        <details className="card p-4">
+          <summary className="font-bold cursor-pointer flex items-center gap-2 list-none"><Icon name="note" size={20} className="text-[var(--accent)]" /> האפיון הראשוני <span className="caption font-normal">(לעיון ועדכון)</span></summary>
+          <div className="pt-3"><Characterization businessId={biz.id} canEdit={isConsultant} compact /></div>
+        </details>
+      )}
 
       <section className="space-y-2">
         <h2 className="section-title">חומרים לפגישה</h2>

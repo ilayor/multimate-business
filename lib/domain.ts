@@ -7,6 +7,10 @@ export const DEPARTMENTS = [
   { code: "service", name: "שירות לקוחות" },
 ] as const;
 
+/** CSS colour token for a department, used by DeptChip and project stripes. */
+export const deptVar = (code: string | null | undefined) =>
+  `var(--d-${DEPARTMENTS.some((d) => d.code === code) ? code : "general"})`;
+
 export const deptName = (code: string | null | undefined) =>
   DEPARTMENTS.find((d) => d.code === code)?.name ?? "כללי";
 

@@ -54,7 +54,7 @@ export function Calendar({ items, onPickDay }: { items: CalItem[]; onPickDay: (d
 
       {view === "month" && <Month cursor={cursor} byDay={byDay} today={today} onPickDay={onPickDay} />}
       {view === "week" && (
-        <div className="space-y-1">
+        <div className="divide-y divide-[var(--line)]">
           {Array.from({ length: 7 }).map((_, i) => {
             const d = addDays(startOfWeek(cursor), i);
             return <DayRow key={i} d={d} items={byDay.get(dayKey(d)) ?? []} isToday={dayKey(d) === today} onPickDay={onPickDay} />;
@@ -107,9 +107,14 @@ function DayRow({ d, items, isToday, onPickDay, expanded }: { d: Date; items: Ca
       </div>
       <div className="flex-1 min-w-0 space-y-1 py-0.5">
         {items.map((i) => <Item key={i.id} i={i} />)}
-        {(items.length === 0 || expanded) && (
-          <button onClick={() => onPickDay(d)} className="w-full text-start text-sm muted rounded-lg px-2 h-9 hover:bg-[var(--surface-2)]">+ קביעת פגישה</button>
-        )}
+        {expanded ? (
+          <button onClick={() => onPickDay(d)} className="w-full text-start text-sm muted rounded-lg px-2 h-9 hover:bg-[var(--surface-2)]">+ קביעת פגישה ביום הזה</button>
+        ) : items.length === 0 ? (
+          <button onClick={() => onPickDay(d)} aria-label={`קביעת פגישה ב-${d.toLocaleDateString("he-IL", { day: "numeric", month: "long" })}`}
+            className="group w-full h-9 rounded-lg flex items-center justify-end px-2 text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]">
+            <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity me-1">קביעה</span><Icon name="plus" size={16} className="opacity-50 group-hover:opacity-100" />
+          </button>
+        ) : null}
       </div>
     </div>
   );
