@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { BrandMark } from "@/components/ui";
 
 const CYCLE = ["אבחון", "ממצאים", "תעדוף", "משימות", "ביצוע", "מדידה"];
 const EMAIL_KEY = "mm:last-email";
@@ -43,7 +44,7 @@ export default function LoginPage() {
     <main className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
       <section className="relative overflow-hidden bg-[var(--accent)] text-[var(--accent-ink)] px-6 py-6 lg:p-14 flex flex-col lg:justify-between gap-4 lg:gap-8">
         <div className="flex items-center gap-2 font-extrabold">
-          <span aria-hidden className="grid place-items-center w-8 h-8 rounded-lg bg-[var(--accent-ink)] text-[var(--accent)]">M</span>
+          <BrandMark size={36} className="rounded-[10px] ring-2 ring-white/25" />
           Multimate Business
         </div>
         <div className="grid gap-10 lg:gap-14">

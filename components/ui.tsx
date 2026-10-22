@@ -200,3 +200,20 @@ export function Empty({ icon, title, children }: { icon: string; title: string; 
     </div>
   );
 }
+
+/* ---------- brand mark: the Multimate M with a rising arrow, green and white ---------- */
+export function BrandMark({ size = 32, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg aria-hidden width={size} height={size} viewBox="0 0 180 180" className={`shrink-0 ${className}`}>
+      <defs>
+        <linearGradient id="mm-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2a8a72" /><stop offset="1" stopColor="#16503f" /></linearGradient>
+        <linearGradient id="mm-ar" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#7fe3bd" /><stop offset="1" stopColor="#d9fff0" /></linearGradient>
+      </defs>
+      <rect width="180" height="180" rx="40" fill="url(#mm-bg)" />
+      <path d="M36 72c0-8 6-11 12-6l46 44-15 16-23-22v30c0 6-5 9-10 7l-6-2c-3-1-4-3-4-6z" fill="#fff" />
+      <path d="M114 106l22-20v48c0 5-4 8-9 6l-8-3c-3-1-5-4-5-7z" fill="#fff" />
+      <path d="M68 132l57-57" stroke="url(#mm-ar)" strokeWidth="22" strokeLinecap="round" />
+      <path d="M152 36l-5 49-44-44z" fill="#d9fff0" stroke="#d9fff0" strokeWidth="6" strokeLinejoin="round" />
+    </svg>
+  );
+}
