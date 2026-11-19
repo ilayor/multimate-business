@@ -2,10 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { BrandMark } from "@/components/ui";
+import { BrandMark, Wordmark } from "@/components/ui";
 
-const CYCLE = ["אבחון", "ממצאים", "תעדוף", "משימות", "ביצוע", "מדידה"];
-const EMAIL_KEY = "mm:last-email";
+const EMAIL_KEY = "orshina:last-email";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,7 +17,7 @@ export default function LoginPage() {
   useEffect(() => {
     supabase().auth.getSession().then(({ data }) => { if (data.session) router.replace("/"); });
     try {
-      const saved = localStorage.getItem(EMAIL_KEY);
+      const saved = localStorage.getItem(EMAIL_KEY) ?? localStorage.getItem("mm:last-email");
       if (saved) { setEmail(saved); document.getElementById("password")?.focus(); }
       else document.getElementById("email")?.focus();
     } catch {}
@@ -41,27 +40,25 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
-      <section className="relative overflow-hidden bg-[var(--accent)] text-[var(--accent-ink)] px-6 py-6 lg:p-14 flex flex-col lg:justify-between gap-4 lg:gap-8">
-        <div className="flex items-center gap-2 font-extrabold">
-          <BrandMark size={36} className="rounded-[10px] ring-2 ring-white/25" />
-          Multimate Business
+    <main className="min-h-dvh grid lg:grid-cols-[1.1fr_1fr]">
+      <section className="relative overflow-hidden bg-[var(--accent)] text-[var(--accent-ink)] px-6 pt-[calc(24px+env(safe-area-inset-top,0px))] pb-8 lg:p-14 flex flex-col lg:justify-between gap-6">
+        <div aria-hidden className="absolute -bottom-24 -start-24 w-80 h-80 rounded-full border-[36px] border-white/10" />
+        <div className="relative flex items-center gap-2.5">
+          <BrandMark size={38} className="rounded-[10px] ring-2 ring-white/25" />
+          <Wordmark className="!text-[17px]" />
         </div>
-        <div className="grid gap-10 lg:gap-14">
-          <div>
-            <h1 className="text-3xl lg:text-6xl font-bold leading-[1.05]">ליווי עסקי<br className="hidden lg:block" /> שאפשר למדוד.</h1>
-            <p className="hidden lg:block mt-4 max-w-md opacity-85 text-lg">מהשיחה הראשונה ועד התוצאה: כל תשובה, ממצא ומשימה נשמרים במקום אחד — ושום מספר לא מוצג כעובדה לפני שאומת.</p>
-          </div>
-          <Cycle />
+        <div className="relative">
+          <h1 className="text-[32px] lg:text-6xl font-extrabold leading-[1.05] tracking-tight">כל המתאמנות,<br />במקום אחד.</h1>
+          <p className="mt-3 lg:mt-5 max-w-md opacity-85 text-[17px] lg:text-lg">מפגשים, פולואפים, תשלומים ומשימות של אורשינא. מהטלפון, בכל רגע.</p>
         </div>
-        <p className="text-sm opacity-70 hidden lg:block">הכניסה בהזמנה בלבד · כל עסק רואה רק את המידע שלו</p>
+        <p className="relative text-sm opacity-70 hidden lg:block">אורשינא · אימון אישי</p>
       </section>
 
       <section className="flex items-start lg:items-center justify-center px-6 py-10 lg:py-12">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5" noValidate>
           <div>
             <h2 className="text-3xl font-bold">כניסה</h2>
-            <p className="muted mt-1">ברוכים השבים. התחברו כדי להמשיך מאיפה שעצרתם.</p>
+            <p className="muted mt-1">ההתחברות נשמרת במכשיר, כך שמתחברים פעם אחת.</p>
           </div>
           <div>
             <label className="label" htmlFor="email">אימייל</label>
@@ -79,32 +76,8 @@ export default function LoginPage() {
           </div>
           {error && <p className="text-sm text-[var(--bad)] bg-[var(--bad-soft)] rounded-lg px-3 py-2" role="alert">{error}</p>}
           <button className="btn w-full !min-h-12 text-base" disabled={busy || !email.trim() || !password}>{busy ? "מתחבר…" : "כניסה"}</button>
-          <p className="text-xs muted">שכחתם סיסמה או שעוד אין לכם חשבון? פנו ליועץ שהזמין אתכם.</p>
         </form>
       </section>
     </main>
-  );
-}
-
-// The six stages placed on a ring, read clockwise from the top.
-function Cycle() {
-  const R = 42; // percent of the box
-  return (
-    <div className="relative w-full max-w-[340px] aspect-square mx-auto lg:mx-0 hidden lg:block" aria-label={`מחזור הליווי: ${CYCLE.join(", ")}`} role="img">
-      <div aria-hidden className="absolute inset-[8%] rounded-full border-2 border-dashed border-current opacity-30" />
-      <div aria-hidden className="absolute inset-0 grid place-items-center text-center">
-        <div><div className="text-sm opacity-70">מחזור</div><div className="font-display text-2xl font-bold">שבועי</div></div>
-      </div>
-      {CYCLE.map((s, i) => {
-        const a = (i / CYCLE.length) * 2 * Math.PI - Math.PI / 2;
-        return (
-          <span key={s} aria-hidden
-            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent-ink)] text-[var(--accent)] px-3 py-1 text-sm font-bold whitespace-nowrap shadow-sm"
-            style={{ left: `${50 + R * Math.cos(a)}%`, top: `${50 + R * Math.sin(a)}%` }}>
-            <span className="num opacity-60 me-1">{i + 1}</span>{s}
-          </span>
-        );
-      })}
-    </div>
   );
 }

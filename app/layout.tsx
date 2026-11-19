@@ -3,9 +3,9 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Multimate Business",
-  description: "ליווי עסקי מדיד",
-  appleWebApp: { capable: true, title: "Multimate", statusBarStyle: "default" },
+  title: "ORSHINA CRM",
+  description: "מתאמנות, מפגשים ותשלומים של אורשינא במקום אחד",
+  appleWebApp: { capable: true, title: "ORSHINA", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -13,8 +13,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f4f3" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1110" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f2ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#141010" },
   ],
 };
 

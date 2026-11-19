@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { deptName, deptVar } from "@/lib/domain";
 
 /* ---------- icons (1.8px stroke, currentColor) ---------- */
@@ -32,6 +32,16 @@ const paths: Record<string, React.ReactNode> = {
   sliders: <path d="M4 7h10M18 7h2M4 17h4M12 17h8M14 4.5v5M8 14.5v5" />,
   logout: <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10" />,
   camera: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
+  users: <><circle cx="9" cy="8.5" r="3.5" /><path d="M2.5 19.5c1.2-3.3 3.6-5 6.5-5s5.3 1.7 6.5 5" /><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c1.8.6 3.2 2.2 4 4.7" /></>,
+  wallet: <><rect x="3" y="6" width="18" height="14" rx="3" /><path d="M3 10h18M16.5 14.5h1.5" /><path d="M6 6l9-3 1.5 3" /></>,
+  wa: <><path d="M4 20l1.3-4A8.5 8.5 0 1 1 8.4 19z" /><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.4-2-1-1 .8a4 4 0 0 1-2.1-2.1l.8-1-1-2z" /></>,
+  search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></>,
+  settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M4.2 6.2l2.1 2.1M17.7 15.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 17.8l2.1-2.1M17.7 8.3l2.1-2.1" /></>,
+  clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" /></>,
+  restore: <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />,
+  sort: <path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5" />,
+  package: <><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9" /></>,
 };
 export function Icon({ name, size = 22, className = "" }: { name: keyof typeof paths | string; size?: number; className?: string }) {
   return (
@@ -40,7 +50,7 @@ export function Icon({ name, size = 22, className = "" }: { name: keyof typeof p
   );
 }
 
-/* ---------- round check (Multimate style): empty ring → filled green with a tick ---------- */
+/* ---------- round check: empty ring → filled green with a tick ---------- */
 export function Check({ done, onToggle, label }: { done: boolean; onToggle: () => void; label: string }) {
   return (
     <button type="button" role="checkbox" aria-checked={done} aria-label={label}
@@ -120,7 +130,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastCtx.Provider value={push}>
       {children}
-      <div aria-live="polite" className="fixed z-[60] inset-x-0 bottom-[calc(84px+env(safe-area-inset-bottom,0px))] md:bottom-6 flex flex-col items-center gap-2 px-4 pointer-events-none">
+      <div aria-live="polite" className="fixed z-[60] inset-x-0 bottom-[calc(140px+env(safe-area-inset-bottom,0px))] md:bottom-6 flex flex-col items-center gap-2 px-4 pointer-events-none">
         {toasts.map((t) => (
           <div key={t.id} className="toast pointer-events-auto flex items-center gap-4 rounded-2xl px-4 py-3 bg-[var(--ink)] text-[var(--bg)] shadow-lg text-sm font-semibold max-w-md w-full justify-between">
             <span>{t.text}</span>
@@ -201,19 +211,22 @@ export function Empty({ icon, title, children }: { icon: string; title: string; 
   );
 }
 
-/* ---------- brand mark: the Multimate M with a rising arrow, green and white ---------- */
+/* ---------- brand mark: a terracotta tile with a white ring and a rising dot ---------- */
 export function BrandMark({ size = 32, className = "" }: { size?: number; className?: string }) {
+  // unique per instance: a hidden copy (phone header on desktop) would otherwise own the gradient
+  const gid = "or-bg-" + useId().replace(/:/g, "");
   return (
     <svg aria-hidden width={size} height={size} viewBox="0 0 180 180" className={`shrink-0 ${className}`}>
       <defs>
-        <linearGradient id="mm-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2a8a72" /><stop offset="1" stopColor="#16503f" /></linearGradient>
-        <linearGradient id="mm-ar" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#7fe3bd" /><stop offset="1" stopColor="#d9fff0" /></linearGradient>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#d27a59" /><stop offset="1" stopColor="#9c4229" /></linearGradient>
       </defs>
-      <rect width="180" height="180" rx="40" fill="url(#mm-bg)" />
-      <path d="M36 72c0-8 6-11 12-6l46 44-15 16-23-22v30c0 6-5 9-10 7l-6-2c-3-1-4-3-4-6z" fill="#fff" />
-      <path d="M114 106l22-20v48c0 5-4 8-9 6l-8-3c-3-1-5-4-5-7z" fill="#fff" />
-      <path d="M68 132l57-57" stroke="url(#mm-ar)" strokeWidth="22" strokeLinecap="round" />
-      <path d="M152 36l-5 49-44-44z" fill="#d9fff0" stroke="#d9fff0" strokeWidth="6" strokeLinejoin="round" />
+      <rect width="180" height="180" rx="40" fill={`url(#${gid})`} />
+      <circle cx="90" cy="94" r="44" fill="none" stroke="#fff" strokeWidth="20" />
+      <circle cx="131" cy="50" r="15" fill="#fff4ee" />
     </svg>
   );
+}
+
+export function Wordmark({ className = "" }: { className?: string }) {
+  return <span dir="ltr" className={`wordmark ${className}`}>ORSHINA<small>CRM</small></span>;
 }
